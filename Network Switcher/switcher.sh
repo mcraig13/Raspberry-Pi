@@ -10,7 +10,7 @@ function setToWifi {
     	sudo systemctl daemon-reload
 	sudo service networking restart
 	sudo ifup wlan0
-	xmessage "Network has been set to WiFi." -buttons Thanks
+	whiptail --title "Network Switch" --msgbox "Network has been set to Wifi. Choose Ok to continue." 10 60
 }
 
 function createWifi {
@@ -38,34 +38,33 @@ iface wlan0 inet static
 }
 
 function reboot {
-    xmessage "Network has been set to Hotspot, a reboot is now required. Okay?" -buttons Okay,No
-	BOOTQUERY=$?
-	if [ $BOOTQUERY -eq 101 ]; then
-		sudo reboot
+	if (whiptail --title "Network Switch" --yesno "Network has been set to hotspot, would you like to reboot now?" 10 60) then
+    		sudo reboot
 	else
 		echo "No hotspot for you then."
 	fi
 }
 
-xmessage "Choose from the following options:" -buttons WiFi,Hotspot,Cancel
-RESULT=$?
+OPTION=$(whiptail --title "Network Switch" --menu "Choose your option" 15 60 4 \
+"1" "Wifi" \
+"2" "Hotspot" 3>&1 1>&2 2>&3)
 
-if [ $RESULT -eq 101 ]; then
+if [ $OPTION = 1 ]; then
 	if [ -f "$wifiFile" ]; then
-        	setToWifi
-    	else
+		setToWifi
+  	else
         	createWifi
         	setToWifi
     	fi
-elif [ $RESULT -eq 102 ]; then
+elif [ $OPTION = 2 ]; then
     	if [ -f "$hotspotFile" ]; then
         	setToHotspot
 		reboot
     	else
-        	createHotspot
+	       	createHotspot
         	setToHotspot
         	reboot
     	fi
 else
-    xmessage "Operation cancelled." -buttons Thanks
+    	whiptail --title "Network Switch" --msgbox "Operation cancelled. Choose Ok to continue." 10 60
 fi
