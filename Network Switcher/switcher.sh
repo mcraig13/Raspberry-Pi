@@ -4,12 +4,8 @@ wifiFile="interfaces-wifi"
 hotspotFile="interfaces-hotspot"
 
 function setToWifi {
-    	sudo ifdown wlan0
-    	sudo rm /etc/network/interfaces
-    	sudo cp interfaces-wifi /etc/network/interfaces
-    	sudo systemctl daemon-reload
-	sudo service networking restart
-	sudo ifup wlan0
+    sudo rm /etc/network/interfaces
+    sudo cp interfaces-wifi /etc/network/interfaces
 	whiptail --title "Network Switch" --msgbox "Network has been set to Wifi. Choose Ok to continue." 10 60
 }
 
@@ -26,7 +22,7 @@ iface wlan0 inet static
 
 function setToHotspot {
 	sudo rm /etc/network/interfaces
-    	sudo cp interfaces-hotspot /etc/network/interfaces
+    sudo cp interfaces-hotspot /etc/network/interfaces
 }
 
 function createHotspot {
@@ -45,26 +41,39 @@ function reboot {
 	fi
 }
 
+function restartNetwork {
+    sudo systemctl daemon-reload
+    sudo service networking restart
+    sudo ifdown wlan0
+    sudo ifup wlan0
+}
+
 OPTION=$(whiptail --title "Network Switch" --menu "Choose your option" 15 60 4 \
 "1" "Wifi" \
-"2" "Hotspot" 3>&1 1>&2 2>&3)
+"2" "Hotspot" \
+"3" "Restart Network" 3>&1 1>&2 2>&3)
 
 if [ $OPTION = 1 ]; then
 	if [ -f "$wifiFile" ]; then
 		setToWifi
+        restartNetwork
   	else
-        	createWifi
-        	setToWifi
-    	fi
+        createWifi
+        setToWifi
+        restartNetwork
+    fi
 elif [ $OPTION = 2 ]; then
-    	if [ -f "$hotspotFile" ]; then
-        	setToHotspot
-		reboot
-    	else
-	       	createHotspot
-        	setToHotspot
-        	reboot
-    	fi
+    if [ -f "$hotspotFile" ]; then
+        setToHotspot
+        reboot
+    else
+        createHotspot
+        setToHotspot
+        reboot
+    fi
+elif [ $OPTION = 3 ]; then
+    restartNetwork
+    whiptail --title "Network Restarted" --msgbox "Network has been restarted. Now you will need to connect to a Wifi network else it will fail. Whether it says it's connected or not it's probably lying to you. \...End of rant...\" 10 60
 else
-    	whiptail --title "Network Switch" --msgbox "Operation cancelled. Choose Ok to continue." 10 60
+    whiptail --title "Cancelled" --msgbox "Operation cancelled. Choose Ok to continue." 10 60
 fi
